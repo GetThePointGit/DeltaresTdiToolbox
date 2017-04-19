@@ -1,0 +1,30 @@
+# This file contains metadata for your plugin.
+# This file should be included when you package your plugin.
+
+[general]
+name=Tijhuis Qgis toolbox
+qgisMinimumVersion=2.14
+description=Toolbox for working with 3di hydraulic models
+version=0.1
+author=Elgard van Leeuwen (Deltares) and Bastiaan Roos (Roos Geo Solutions)
+email=Elgard.vanLeeuwen@deltares.nl
+
+about=...
+
+tracker=https://github.com/.....
+repository=https://github.com/.....
+# End of mandatory metadata
+
+# Recommended items:
+
+# Uncomment the following line and add your changelog:
+# changelog=
+
+# Tags are comma separated with spaces allowed
+# tags=
+
+homepage=https://github.com/.......
+category=Plugins
+icon=media/toolbox.png
+# experimental flag
+experimental=True
