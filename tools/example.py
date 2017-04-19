@@ -5,7 +5,7 @@ from PyQt4.QtCore import Qt
 from PyQt4 import QtGui
 
 # Import the code for the DockWidget
-from TijhuisQGisTools.views.example_widget import ExampleWidget
+from DeltaresTdiToolbox.views.example_widget import ExampleWidget
 
 
 log = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ class ExampleTool:
         # initialize plugin directory
         self.plugin_dir = os.path.dirname(__file__)
 
-        self.icon_path = ':/plugins/TijhuisQGisTools/media/icon_toolbox.png'
+        self.icon_path = ':/plugins/DeltaresTdiToolbox/media/icon_toolbox.png'
         self.menu_text = u'Example Tool'
 
         self.plugin_is_active = False

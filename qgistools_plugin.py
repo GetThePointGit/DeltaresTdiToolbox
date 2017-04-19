@@ -45,11 +45,11 @@ class DeltaresTdiToolbox(QObject):
 
         # Declare instance attributes
         self.actions = []
-        self.menu = self.tr(u'Tijhuis QGis Tools')
+        self.menu = self.tr(u'Deltares 3di toolbox')
 
         # Set toolbar and init a few toolbar widgets
-        self.toolbar = self.iface.addToolBar(u'TijhuisQGisTools')
-        self.toolbar.setObjectName(u'TijhuisQGisTools')
+        self.toolbar = self.iface.addToolBar(u'DeltaresTdiToolbox')
+        self.toolbar.setObjectName(u'DeltaresTdiToolbox')
 
         # Init tools
         self.example_tool = ExampleTool(self.iface)
@@ -57,7 +57,7 @@ class DeltaresTdiToolbox(QObject):
         self.tools = []
         self.tools.append(self.example_tool)
 
-        self.group_layer_name = 'Tijhuis lagen'
+        self.group_layer_name = '3di lagen'
         self.group_layer = None
 
         # self.layer_manager = LayerTreeManager(self.iface, self.ts_datasource)
@@ -188,7 +188,7 @@ class DeltaresTdiToolbox(QObject):
 
         for action in self.actions:
             self.iface.removePluginMenu(
-                u'TijhuisQGisTools',
+                u'DeltaresTdiToolbox',
                 action)
             self.iface.removeToolBarIcon(action)
 
