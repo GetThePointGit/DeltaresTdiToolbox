@@ -188,14 +188,12 @@ class DeltaresTdiToolbox(QObject):
 
         for action in self.actions:
             self.iface.removePluginMenu(
-                u'DeltaresTdiToolbox',
+                self.menu,
                 action)
             self.iface.removeToolBarIcon(action)
 
             for tool in self.tools:
                 tool.on_unload()
-
-        # self.layer_manager.on_unload()
 
         # remove the toolbar
         try:

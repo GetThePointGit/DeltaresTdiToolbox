@@ -1,5 +1,5 @@
 <RCC>
-    <qresource prefix="/plugins/DeltaresTdiToolbox/" >
+    <qresource prefix="/plugins/DeltaresTdiToolbox" >
         <file>media/icon_toolbox.png</file>
     </qresource>
 </RCC>
