@@ -8,7 +8,7 @@ from PyQt4 import QtGui
 from .toolbox_dockwidget import ToolboxDockwidget
 from .toolbox_model import ToolboxModel
 
-log = logging.getLogger(__name__)
+log = logging.getLogger('DeltaresTdi.' + __name__)
 
 
 class Toolbox:

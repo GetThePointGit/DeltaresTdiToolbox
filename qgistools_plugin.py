@@ -1,15 +1,19 @@
 import os.path
+import logging
 
 from PyQt4.QtCore import (QSettings, QTranslator, qVersion, QCoreApplication,
     QObject)
-from PyQt4.QtGui import QAction, QIcon, QLCDNumber
-from qgis.core import QgsMapLayerRegistry
+from PyQt4.QtGui import QAction, QIcon
+
+import pydevd
 
 # Initialize Qt resources from file resources.py
 import resources  # NoQa
 
 # Import the code of the tools
-from .tools.example import ExampleTool
+from DeltaresTdiToolbox.tools.waterbalance import WaterBalanceTool
+
+log = logging.getLogger('DeltaresTdi.' + __name__)
 
 
 class DeltaresTdiToolbox(QObject):
@@ -20,6 +24,8 @@ class DeltaresTdiToolbox(QObject):
         iface(QgsInterface): An interface instance which provides the hook to
         manipulate the QGIS application at run time.
         """
+        log.debug('DeltaresTdToolbox init')
+
         super(DeltaresTdiToolbox, self).__init__(iface)
 
         self.iface = iface
@@ -43,24 +49,6 @@ class DeltaresTdiToolbox(QObject):
             if qVersion() > '4.3.3':
                 QCoreApplication.installTranslator(self.translator)
 
-        # Declare instance attributes
-        self.actions = []
-        self.menu = self.tr(u'Deltares 3di toolbox')
-
-        # Set toolbar and init a few toolbar widgets
-        self.toolbar = self.iface.addToolBar(u'DeltaresTdiToolbox')
-        self.toolbar.setObjectName(u'DeltaresTdiToolbox')
-
-        # Init tools
-        self.example_tool = ExampleTool(self.iface)
-
-        self.tools = []
-        self.tools.append(self.example_tool)
-
-        self.group_layer_name = '3di lagen'
-        self.group_layer = None
-
-        # self.layer_manager = LayerTreeManager(self.iface, self.ts_datasource)
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -141,14 +129,52 @@ class DeltaresTdiToolbox(QObject):
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
-        try:
-            # load optional settings for remote debugging for development purposes
-            # add file remote_debugger_settings.py in main directory to use debugger
-            import remote_debugger_settings
-        except ImportError:
-            pass
+        # try:
+        #     # load optional settings for remote debugging for development purposes
+        #     # add file remote_debugger_settings.py in main directory to use debugger
+        #     import remote_debugger_settings
+        # except ImportError:
+        #     pass
 
-        # add 3Di logo and about info (doing nothing right now)
+        # get link to active threedi plugin
+        log.debug('DeltaresTdiToolbox initGui')
+        try:
+            from ThreeDiToolbox.threedi_tools import active_tdi_plugin
+
+        except:
+            raise ImportError("For water balance tool the ThreeDiToolbox plugin must be installed, "
+                              "version xxx or higher")
+
+        # make reference to other 3di plugin for getting loaded results, etc.
+        if len(active_tdi_plugin) < 1:
+            log.debug('active_tdi_plugin is empty: %s', active_tdi_plugin)
+            raise ValueError('ThreeDiToolbox plugin is not active, please activate first')
+        else:
+            tdi_plugin = active_tdi_plugin[0]
+
+        # Declare instance attributes
+        self.actions = []
+        self.menu = self.tr(u'Deltares 3di toolbox')
+
+        # Set toolbar and init a few toolbar widgets
+        self.toolbar = self.iface.addToolBar(u'DeltaresTdiToolbox')
+        self.toolbar.setObjectName(u'DeltaresTdiToolbox')
+
+        # Init tools
+        self.example_tool = WaterBalanceTool(self.iface, tdi_plugin.ts_datasource)
+
+        self.tools = []
+        self.tools.append(self.example_tool)
+
+        self.group_layer_name = '3di lagen'
+        self.group_layer = None
+
+        pydevd.settrace('localhost',
+                        port=3105,
+                        stdoutToServer=True,
+                        stderrToServer=True,
+                        suspend=False,
+                        trace_only_current_thread=True)
 
         for tool in self.tools:
             self.add_action(
@@ -158,33 +184,11 @@ class DeltaresTdiToolbox(QObject):
                 callback=tool.run,
                 parent=self.iface.mainWindow())
 
-        # self.init_state_sync()
-
-    def check_status_model_and_results(self, *args):
-        """ Check if a (new and valid) model or result is selected and react on
-            this by pre-processing of things and activation/ deactivation of
-            tools. function is triggered by changes in the ts_datasource
-            args:
-                *args: (list) the arguments provided by the different signals
-        """
-        # Enable/disable tools that depend on netCDF results.
-        # For side views also the spatialite needs to be imported or else it
-        # crashes with a  segmentation fault
-        if self.ts_datasource.rowCount() > 0:
-            self.graph_tool.action_icon.setEnabled(True)
-        else:
-            self.graph_tool.action_icon.setEnabled(False)
-        if (self.ts_datasource.rowCount() > 0 and
-                self.ts_datasource.model_spatialite_filepath is not None):
-            self.sideview_tool.action_icon.setEnabled(True)
-        else:
-            self.sideview_tool.action_icon.setEnabled(False)
-
-
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
 
-        # self.unload_state_sync()
+        log.debug('DeltaresTdiToolbox unload')
+
 
         for action in self.actions:
             self.iface.removePluginMenu(

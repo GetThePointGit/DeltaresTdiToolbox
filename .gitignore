@@ -88,5 +88,9 @@ ENV/
 # Rope project settings
 .ropeproject
 
+# local install specific
+remote_debugger_settings.py
+
+
 # ide
 .idea

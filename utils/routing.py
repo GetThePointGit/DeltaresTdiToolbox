@@ -1,6 +1,6 @@
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('DeltaresTdi.' + __name__)
 
 try:
     # First import view to set correct API versions of QString, etc.

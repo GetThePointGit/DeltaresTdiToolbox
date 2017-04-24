@@ -3,7 +3,8 @@ import logging
 try:
     from qgis.core import QgsMessageLog
 except ImportError:
-    print 'unable to load qgis'
+    print 'unable to load qgis for logging'
+    logging.warning('unable to load qgis for logging')
 
 
 class QGisHandler(logging.Handler):
@@ -19,6 +20,7 @@ class QGisHandler(logging.Handler):
         self.logging_ref = logging
 
     def emit(self, record):
+
         msg = self.format(record)
 
         if record.levelno >= self.logging_ref.ERROR:
@@ -36,24 +38,30 @@ class QGisHandler(logging.Handler):
             self.iface.messageBar().pushMessage(
                     record.funcName, msg, level, 0)
 
+def setup_qgis_logging(level=logging.INFO):
 
-def setup_logging(iface=None):
-
-    log = logging.getLogger('')
-
-    ql = QGisHandler(iface)
-    ql.setLevel(logging.INFO)
-
-    # fh = logging.FileHandler('plugin_log.log')
-    # fh.setLevel(logging.WARNING)
+    log = logging.getLogger('DeltaresTdi')
 
     st = logging.StreamHandler()
-    st.setLevel(logging.INFO)
+    st.setLevel(logging.DEBUG)
 
     form = logging.Formatter('%(name)-12s - %(levelname)-8s - %(message)s')
-    # fh.setFormatter(form)
     st.setFormatter(form)
 
-    log.addHandler(ql)
-    # log.addHandler(fh)
     log.addHandler(st)
+    log.setLevel(level)
+
+    log.debug('stream log handler and loglevel set')
+
+def add_qgis_handler(iface):
+
+    log = logging.getLogger('DeltaresTdi')
+
+    if True in [True for h in log.handlers if type(h) == QGisHandler]:
+        log.debug('handlers already set. Skip setup handlers')
+        return
+
+    ql = QGisHandler(iface)
+    ql.setLevel(logging.DEBUG)
+    log.addHandler(ql)
+    log.debug('add qgis log handler')
