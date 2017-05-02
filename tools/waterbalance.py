@@ -1,5 +1,6 @@
 import os.path
 import logging
+import numpy as np
 
 from PyQt4.QtCore import Qt
 
@@ -56,28 +57,106 @@ class WaterBalanceCalculation(object):
 
         return flow_lines
 
-    def get_aggregated_flows(self, link_ids):
+    def get_nodes(self, wb_polygon):
+
+        log.info('polygon of wb area: %s', wb_polygon.exportToWkt())
+
+        nodes = {
+            '1d': [],
+            '2d': []
+        }
+
+        lines, points, pumps = self.ts_datasource.rows[0].get_result_layers()
+
+        # use bounding box and spatial index to prefilter lines
+        request_filter = QgsFeatureRequest().setFilterRect(wb_polygon.geometry().boundingBox())
+        for point in points.getFeatures(request_filter):
+            # test if lines are crossing boundary of polygon
+            if wb_polygon.contains(point.geometry()):
+                if point['type'] == '1d':
+                    nodes['1d'].append(point['id'])
+                else:
+                    nodes['2d'].append(point['id'])
+
+        return nodes
+
+    def get_aggregated_flows(self, link_ids, node_ids):
 
         ds = self.ts_datasource.rows[0].datasource()
 
-        param = 'q'
+        # create numpy table with flowlink information
+        tnp_link = []  # id, 1d or 2d, in or out
+        for l in link_ids['2d_in']:
+            tnp_link.append((l, 2, 1))
+        for l in link_ids['2d_out']:
+            tnp_link.append((l, 2, -1))
+        for l in link_ids['1d_in']:
+            tnp_link.append((l, 1, 1))
+        for l in link_ids['1d_out']:
+            tnp_link.append((l, 1, -1))
+        np_link = np.array(tnp_link, dtype=[('id', int), ('ntype', int), ('dir', int)])
+        np_link.sort(axis=0)
+
+        # create numpy table with node information
+        tnp_node = []  # id, 1d or 2d, in or out
+        for l in node_ids['2d']:
+            tnp_node.append((l, 2))
+        for l in node_ids['1d']:
+            tnp_node.append((l, 1))
+
+        np_node = np.array(tnp_node, dtype=[('id', int), ('ntype', int)])
+        np_node.sort(axis=0)
 
         # # get range to read from netCDF for processing
         # minimum = min(min(link_ids['2d_in']),  min(link_ids['2d_out']))
         # maximum = max(max(link_ids['2d_in']),  max(link_ids['2d_out']))
 
-        ids = sorted(link_ids['2d_in'] + link_ids['2d_out'])
+        param = 'q'
 
         ts = ds.get_timestamps(parameter=param)
         dt = ts[1] - ts[0]
 
+        total_time = np.zeros(shape=(np.size(ts, 0), 4))
+        total_location = np.zeros(shape=(np.size(np_link, 0), 2))
+
+        t_pref = 0
+        vol_pref = 0
+
         for ts_idx, t in enumerate(ts):
-            # todo: reduce read by reading only slice between minimum and maximum slice
-            values = self.ds.get_values_by_timestamp(param, ts_idx, ids)
 
+            # inflow and outflow through 1d and 2d
+            # todo: split 1d and 2d flows
+            vol = ds.get_values_by_timestep_nr('q', ts_idx, np_link['id']) * np_link['dir']  # * dt
 
+            pos = vol.clip(min=0)
+            neg = vol.clip(max=0)
 
-        timestep = ds.get_values_by_timestep_nr('q', 2)
+            total_time[ts_idx, 0] = pos.sum()
+            total_time[ts_idx, 1] = neg.sum()
+
+            total_location[:, 0] += pos
+            total_location[:, 1] += neg
+
+            # delta volume
+            if ts_idx == 0:
+                total_time[ts_idx, 2] = 0
+                vol = ds.get_values_by_timestep_nr('vol', ts_idx, np_node['id'])
+                vol_pref = vol.sum()
+                t_pref = t
+            else:
+
+                vol = ds.get_values_by_timestep_nr('vol', ts_idx, np_node['id'])  # * dt
+                tot_vol = vol.sum()
+
+                total_time[ts_idx, 2] = -1 * (tot_vol - vol_pref) / (t - t_pref)
+
+                vol_pref = tot_vol
+                t_pref = t
+
+        # calculate error
+        total_time[:, 3] = -1 * total_time[:, 0:3].sum(axis=1)
+
+        return ts, total_time, total_location
 
 
 class WaterBalanceTool:

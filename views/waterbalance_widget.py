@@ -39,10 +39,31 @@ class WaterBalancePlotWidget(pg.PlotWidget):
         self.setLabel("bottom", "tijd", "s")
         self.setLabel("left", "Hoeveelheid", "m3")
 
-        pen = pg.mkPen(color=QColor(200, 200, 200), width=1)
-        self.example_plot = pg.PlotDataItem(np.array([(0.0, np.nan)]), pen=pen)
-        self.addItem(self.example_plot)
+        pen = pg.mkPen(color=QColor(0, 0, 200), width=2)
+        self.flow_in_plot = pg.PlotDataItem(np.array([(0.0, np.nan)]), pen=pen)
+        self.addItem(self.flow_in_plot)
 
+        pen = pg.mkPen(color=QColor(200, 200, 0), width=2)
+        self.flow_out_plot = pg.PlotDataItem(np.array([(0.0, np.nan)]), pen=pen)
+        self.addItem(self.flow_out_plot)
+
+        pen = pg.mkPen(color=QColor(200, 0, 0), width=2)
+        self.storage_plot = pg.PlotDataItem(np.array([(0.0, np.nan)]), pen=pen)
+        self.addItem(self.storage_plot)
+
+        pen = pg.mkPen(color=QColor(0, 200, 0), width=2)
+        self.error_plot = pg.PlotDataItem(np.array([(0.0, np.nan)]), pen=pen)
+        self.addItem(self.error_plot)
+
+    def set_timeseries(self, ts, total_timeseries):
+
+
+        self.flow_in_plot.setData(x=ts, y=total_timeseries[:, 0], connect='finite')
+        self.flow_out_plot.setData(x=ts, y=total_timeseries[:, 1], connect='finite')
+        self.storage_plot.setData(x=ts, y=total_timeseries[:, 2], connect='finite')
+        self.error_plot.setData(x=ts, y=total_timeseries[:, 3], connect='finite')
+
+        self.autoRange()
 
 
 
@@ -62,7 +83,7 @@ class WaterBalanceWidget(QDockWidget):
         # create tool sub classes
         widget = WaterBalancePlotWidget(self)
 
-        self.waterbalance_widget = widget
+        self.plot_widget = widget
         self.side_view_tab_widget.addTab(widget, widget.name)
 
         # link tool
@@ -73,7 +94,7 @@ class WaterBalanceWidget(QDockWidget):
         # add listeners
         self.select_polygon_button.toggled.connect(self.toggle_polygon_button)
         self.reset_waterbalans_button.clicked.connect(self.reset_waterbalans)
-        self.tool.deactivated.connect(self.calc_wb)
+        self.tool.deactivated.connect(self.update_wb)
 
     def on_polygon_ready(self, points):
         self.iface.mapCanvas().unsetMapTool(self.tool)
@@ -97,6 +118,13 @@ class WaterBalanceWidget(QDockWidget):
             self.select_polygon_button.setText(_translate(
                 "DockWidget", "Teken gebied", None))
 
+    def update_wb(self):
+
+        ts, total_time = self.calc_wb()
+        self.plot_widget.set_timeseries(ts, total_time)
+
+
+
     def calc_wb(self):
 
         points = self.tool.map_visualisation.points
@@ -109,10 +137,17 @@ class WaterBalanceWidget(QDockWidget):
         wb_polygon.transform(tr)
 
         link_ids = self.calc.get_incoming_and_outcoming_link_ids(wb_polygon)
-        log.info(str(link_ids))
-        print str(link_ids)
+        print(str(link_ids))
+        node_ids = self.calc.get_nodes(wb_polygon)
+        print(str(node_ids))
 
+        ts, total_time, total_location = self.calc.get_aggregated_flows(link_ids, node_ids)
+        print(total_time[:, 0].sum())
+        print(total_time[:, 1].sum())
+        print(total_time[:, 2].sum())
+        print(total_time[:, 3].sum())
 
+        return ts, total_time
 
     def unset_tool(self):
         pass
@@ -126,7 +161,7 @@ class WaterBalanceWidget(QDockWidget):
     def closeEvent(self, event):
         self.select_polygon_button.toggled.disconnect(self.toggle_polygon_button)
         self.reset_waterbalans_button.clicked.disconnect(self.reset_waterbalans)
-        self.tool.deactivated.disconnect(self.calc_wb)
+        self.tool.deactivated.disconnect(self.update_wb)
         self.tool.close()
 
         self.closingWidget.emit()
