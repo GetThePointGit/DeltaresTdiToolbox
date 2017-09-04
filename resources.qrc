@@ -1,5 +1,7 @@
 <RCC>
-    <qresource prefix="/plugins/DeltaresTdiToolbox" >
+    <qresource prefix="/plugins/zDeltaresTdiToolbox/" >
         <file>media/icon_toolbox.png</file>
+        <file>media/weight-scale.png</file>
+        <file>media/weight-scale-deltares.png</file>
     </qresource>
 </RCC>

@@ -1,17 +1,15 @@
-import os.path
 import logging
+import os.path
 
 from PyQt4.QtCore import (QSettings, QTranslator, qVersion, QCoreApplication,
-    QObject)
+                          QObject)
 from PyQt4.QtGui import QAction, QIcon
+# Import the code of the tools
+from zDeltaresTdiToolbox.tools.waterbalance import WaterBalanceTool
 
-import pydevd
-
-# Initialize Qt resources from file resources.py
 import resources  # NoQa
 
-# Import the code of the tools
-from DeltaresTdiToolbox.tools.waterbalance import WaterBalanceTool
+# Initialize Qt resources from file resources.py
 
 log = logging.getLogger('DeltaresTdi.' + __name__)
 
@@ -161,20 +159,19 @@ class DeltaresTdiToolbox(QObject):
         self.toolbar.setObjectName(u'DeltaresTdiToolbox')
 
         # Init tools
-        self.example_tool = WaterBalanceTool(self.iface, tdi_plugin.ts_datasource)
+        self.wb_tool = WaterBalanceTool(self.iface, tdi_plugin.ts_datasource)
 
         self.tools = []
-        self.tools.append(self.example_tool)
+        self.tools.append(self.wb_tool)
 
         self.group_layer_name = '3di lagen'
         self.group_layer = None
 
-        pydevd.settrace('localhost',
-                        port=3105,
-                        stdoutToServer=True,
-                        stderrToServer=True,
-                        suspend=False,
-                        trace_only_current_thread=True)
+        try:
+            import remote_debugger_settings
+        except:
+            log.info('no remote debugger activated')
+            pass
 
         for tool in self.tools:
             self.add_action(

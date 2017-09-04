@@ -1,13 +1,14 @@
 import os.path
 import unittest
 
-from DeltaresTdiToolbox.tests.utilities import get_qgis_app
+from zDeltaresTdiToolbox.tests.utilities import get_qgis_app
+
 QGIS_APP = get_qgis_app()
 
 from qgis.core import QgsPoint, QgsGeometry, QgsCoordinateTransform, QgsCoordinateReferenceSystem
 
 from ThreeDiToolbox.models.datasources import TimeseriesDatasourceModel
-from DeltaresTdiToolbox.tools.waterbalance import WaterBalanceCalculation
+from zDeltaresTdiToolbox.tools.waterbalance import WaterBalanceCalculation
 
 test_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)))
 
@@ -52,5 +53,3 @@ class WaterbalanceClassTest(unittest.TestCase):
         flow_links = calc.get_incoming_and_outcoming_link_ids(self.polygon)
 
         aggregated_flows = calc.get_aggregated_flows(flow_links)
-
-

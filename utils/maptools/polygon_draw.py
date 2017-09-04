@@ -1,16 +1,9 @@
 
-from PyQt4.QtCore import Qt, QSize, QEvent, pyqtSignal, QMetaObject, QVariant
-from PyQt4.QtGui import QTableView, QWidget, QVBoxLayout, QHBoxLayout, \
-    QSizePolicy, QPushButton, QSpacerItem, QApplication, QTabWidget, \
-    QDockWidget, QComboBox, QMessageBox, QColor, QCursor
+from PyQt4.QtCore import Qt
+from PyQt4.QtGui import QColor, QCursor
 
-from qgis.core import QgsPoint, QgsRectangle, QgsCoordinateTransform, \
-    QgsVectorLayer, QgsField, QgsFeature, QgsGeometry, QgsMapLayerRegistry, \
-    QGis, QgsFeatureRequest, QgsDistanceArea, QgsCoordinateReferenceSystem
-from qgis.gui import QgsRubberBand, QgsVertexMarker, QgsMapTool
-
-import pyqtgraph as pg
-
+from qgis.core import QGis
+from qgis.gui import QgsRubberBand, QgsMapTool
 
 
 class PolygonDrawMapVisualisation(object):
@@ -18,12 +11,13 @@ class PolygonDrawMapVisualisation(object):
     def __init__(self, canvas):
 
         self.canvas = canvas
-
         self.points = []
 
         # temp layer for side profile trac
         self.rb = QgsRubberBand(self.canvas, QGis.Polygon)
         self.rb.setColor(Qt.red)
+        self.rb.setFillColor(QColor(255, 0, 0, 128))
+        self.rb.setLineStyle(Qt.DashLine)
         self.rb.setWidth(2)
         self.reset()
 
@@ -45,7 +39,6 @@ class PolygonDrawMapVisualisation(object):
     def reset(self):
         self.points = []
         self.rb.reset(QGis.Polygon)
-
 
 
 class PolygonDrawTool(QgsMapTool):
