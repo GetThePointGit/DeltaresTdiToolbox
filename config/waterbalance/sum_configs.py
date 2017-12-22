@@ -10,7 +10,7 @@ serie_settings = [
             'default_method': 'gross',
             'order': 1,
             'def_color': '63,81,181',
-            'series': ['2d_in', '2d_out', '1d_2d_out'],
+            'series': ['2d_in', '2d_out'],
         }, {
             'name': '2d boundaries',
             'default_method': 'gross',
@@ -22,7 +22,7 @@ serie_settings = [
             'default_method': 'gross',
             'order': 3,
             'def_color': '0,188,212',
-            'series': ['1d_in', '1d_out', '1d_2d_in'],
+            'series': ['1d_in', '1d_out', ],
         }, {
             'name': '1d boundaries',
             'default_method': 'gross',
@@ -36,6 +36,12 @@ serie_settings = [
             'def_color': '205,220,5',
             'series': ['2d_to_1d_pos', '2d_to_1d_neg'],
         },  {
+            'name': '1d-2d flow door grens',
+            'default_method': 'gross',
+            'order': 5,
+            'def_color': '205,220,55',
+            'series': ['1d_2d_out', '1d_2d_in'],
+        }, {
             'name': 'pompen',
             'default_method': 'gross',
             'order': 6,
@@ -101,11 +107,17 @@ serie_settings = [
             'def_color': '0,188,212',
             'series': ['1d_in', '1d_out', 'pump_in', 'pump_out', '1d_bound_in', '1d_bound_out', '1d_2d_in'],
         }, {
-            'name': 'belasting en infiltratie',
+            'name': 'belasting (regen en lateralen',
             'default_method': 'net',
             'order': 3,
             'def_color': '0,150,136',
-            'series': ['rain', 'infiltration_rate', 'lat_1d', 'lat_2d'],
+            'series': ['rain', 'lat_1d', 'lat_2d'],
+        }, {
+            'name': 'infiltratie',
+            'default_method': 'net',
+            'order': 3,
+            'def_color': '50,150,136',
+            'series': ['infiltration_rate'],
         }, {
             'name': '1d-2d uitwisseling',
             'default_method': 'net',

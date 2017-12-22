@@ -1,5 +1,4 @@
 import logging
-# from zDeltaresTdiToolbox.utils.qlogging import add_qgis_handler, setup_qgis_logging
 
 log = logging.getLogger('DeltaresTdi')
 log.setLevel(logging.DEBUG)
@@ -11,7 +10,5 @@ def classFactory(iface):  # pylint: disable=invalid-name
     :param iface: QgsInterface. A QGIS interface instance.
     """
     from zDeltaresTdiToolbox.qgistools_plugin import DeltaresTdiToolbox
-
-    # add_qgis_handler(iface)
 
     return DeltaresTdiToolbox(iface)

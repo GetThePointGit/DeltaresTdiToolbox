@@ -6,7 +6,7 @@ import pyqtgraph as pg
 from PyQt4.QtCore import Qt, QSize, QEvent, QMetaObject
 from PyQt4.QtCore import pyqtSignal
 from PyQt4.QtGui import QTableView, QWidget, QVBoxLayout, QHBoxLayout, \
-    QSizePolicy, QPushButton, QSpacerItem, QApplication, QDockWidget, QComboBox, QColor
+    QSizePolicy, QPushButton, QSpacerItem, QApplication, QDockWidget, QComboBox, QColor, QPen
 from qgis.core import QgsGeometry, QgsCoordinateTransform
 from zDeltaresTdiToolbox.config.waterbalance.sum_configs import serie_settings
 from zDeltaresTdiToolbox.models.wb_item import WaterbalanceItemModel
@@ -77,16 +77,15 @@ class WaterbalanceItemTable(QTableView):
                     try:
                         self.hover_exit(self._last_hovered_row)
                     except IndexError:
-                        log("Hover row index %s out of range" %
-                            self._last_hovered_row, level='WARNING')
+                        log.warning("Hover row index %s out of range",
+                            self._last_hovered_row)
                         # self.hoverExitRow.emit(self._last_hovered_row)
                 # self.hoverEnterRow.emit(row)
                 if row is not None:
                     try:
                         self.hover_enter(row)
                     except IndexError:
-                        log("Hover row index %s out of range" % row,
-                            level='WARNING')
+                        log.warning("Hover row index %s out of range", row),
                 self._last_hovered_row = row
                 pass
         return QTableView.eventFilter(self, widget, event)
@@ -94,6 +93,7 @@ class WaterbalanceItemTable(QTableView):
     def hover_exit(self, row_nr):
         if row_nr >= 0:
             item = self.model.rows[row_nr]
+            item.color.value = item.color.value[:3] + [150]
             item.hover.value = False
 
     def hover_enter(self, row_nr):
@@ -101,6 +101,7 @@ class WaterbalanceItemTable(QTableView):
             item = self.model.rows[row_nr]
             name = item.name.value
             self.hoverEnterRow.emit(name)
+            item.color.value = item.color.value[:3] + [220]
             item.hover.value = True
 
     def setModel(self, model):
@@ -146,7 +147,7 @@ class WaterBalancePlotWidget(pg.PlotWidget):
             x=ts,
             y=zeros,
             connect='finite',
-            pen=pg.mkPen(color=QColor(0, 0, 0, 255), width=1))
+            pen=pg.mkPen(color=QColor(0, 0, 0, 220), width=1))
         self.addItem(zero_serie)
 
         for dir in ['in', 'out']:
@@ -159,9 +160,9 @@ class WaterBalancePlotWidget(pg.PlotWidget):
                         x=ts,
                         y=cum_serie,
                         connect='finite',
-                        pen=pg.mkPen(color=item.color.qvalue, width=2))
+                        pen=pg.mkPen(color=QColor(*item.color.value), width=1))
 
-                    color = item.color.value + [128]
+                    color = item.color.value
                     fill = pg.FillBetweenItem(prev_pldi,
                                               plot_item,
                                               pg.mkBrush(*color))
@@ -193,27 +194,27 @@ class WaterBalancePlotWidget(pg.PlotWidget):
             if item.hover.value:
                 if item.active.value:
                     if 'in' in item._plots:
-                        item._plots['in'].setPen(color=item.color.qvalue,
-                                                 width=3)
+                        item._plots['in'].setPen(color=item.color.value,
+                                                 width=1)
                         item._plots['infill'].setBrush(
-                            pg.mkBrush(item.color.value + [200]))
+                            pg.mkBrush(item.color.value))
                     if 'out' in item._plots:
-                        item._plots['out'].setPen(color=item.color.qvalue,
-                                                  width=5)
+                        item._plots['out'].setPen(color=item.color.value,
+                                                  width=1)
                         item._plots['outfill'].setBrush(
-                            pg.mkBrush(item.color.value + [200]))
+                            pg.mkBrush(item.color.value))
             else:
                 if item.active.value:
                     if 'in' in item._plots:
-                        item._plots['in'].setPen(color=item.color.qvalue,
-                                                 width=2)
+                        item._plots['in'].setPen(color=item.color.value,
+                                                 width=1)
                         item._plots['infill'].setBrush(
-                            pg.mkBrush(item.color.value + [128]))
+                            pg.mkBrush(item.color.value))
                     if 'out' in item._plots:
-                        item._plots['out'].setPen(color=item.color.qvalue,
-                                                  width=2)
+                        item._plots['out'].setPen(color=item.color.value,
+                                                 width=1)
                     item._plots['outfill'].setBrush(
-                        pg.mkBrush(item.color.value + [128]))
+                        pg.mkBrush(item.color.value))
 
 
 class WaterBalanceWidget(QDockWidget):
@@ -251,6 +252,10 @@ class WaterBalanceWidget(QDockWidget):
             0,
             serie_settings.keys())
 
+        self.agg_combo_box.insertItems(
+            0,
+            ['m3/s', 'm3 aggregated'])
+
         # add listeners
         self.select_polygon_button.toggled.connect(self.toggle_polygon_button)
         self.reset_waterbalans_button.clicked.connect(self.reset_waterbalans)
@@ -259,6 +264,7 @@ class WaterBalanceWidget(QDockWidget):
         self.modelpart_combo_box.currentIndexChanged.connect(self.update_wb)
         self.source_nc_combo_box.currentIndexChanged.connect(self.update_wb)
         self.sum_type_combo_box.currentIndexChanged.connect(self.update_wb)
+        self.agg_combo_box.currentIndexChanged.connect(self.update_wb)
 
         # initially turn on tool
         self.select_polygon_button.toggle()
@@ -272,19 +278,17 @@ class WaterBalanceWidget(QDockWidget):
     def toggle_polygon_button(self):
 
         if self.select_polygon_button.isChecked():
-            print 'isChecked'
             self.reset_waterbalans()
 
             self.iface.mapCanvas().setMapTool(self.polygon_tool)
 
             self.select_polygon_button.setText(_translate(
-                "DockWidget", "Klaar", None))
+                "DockWidget", "Gebied tekenen afronden", None))
         else:
-            print 'isUnChecked'
             self.iface.mapCanvas().unsetMapTool(self.polygon_tool)
             self.update_wb()
             self.select_polygon_button.setText(_translate(
-                "DockWidget", "Teken gebied", None))
+                "DockWidget", "Teken nieuw gebied", None))
 
     def redraw_wb(self):
         pass
@@ -294,6 +298,7 @@ class WaterBalanceWidget(QDockWidget):
         ts, graph_series = self.calc_wb(
             self.modelpart_combo_box.currentText(),
             self.source_nc_combo_box.currentText(),
+            self.agg_combo_box.currentText(),
             serie_settings[self.sum_type_combo_box.currentText()])
 
         self.model.removeRows(0, len(self.model.rows))
@@ -301,7 +306,14 @@ class WaterBalanceWidget(QDockWidget):
         self.model.ts = ts
         self.model.insertRows(graph_series['items'])
 
-    def calc_wb(self, model_part, source_nc, settings):
+        if self.agg_combo_box.currentText() == 'm3/s':
+            self.plot_widget.setLabel("left", "Hoeveelheid", "m3/s")
+        elif self.agg_combo_box.currentText() == 'm3 aggregated':
+            self.plot_widget.setLabel("left", "Hoeveelheid", "m3")
+        else:
+            self.plot_widget.setLabel("left", "-", "-")
+
+    def calc_wb(self, model_part, source_nc, aggregation_type, settings):
 
         points = self.polygon_tool.map_visualisation.points
         wb_polygon = QgsGeometry.fromPolygon([points])
@@ -317,11 +329,12 @@ class WaterBalanceWidget(QDockWidget):
 
         ts, total_time = self.calc.get_aggregated_flows(link_ids, pump_ids, node_ids, model_part, source_nc)
 
-        graph_series = self.make_graph_series(ts, total_time, model_part, settings)
+        graph_series = self.make_graph_series(ts, total_time, model_part, aggregation_type, settings)
+
 
         return ts, graph_series
 
-    def make_graph_series(self, ts, total_time, model_part, settings):
+    def make_graph_series(self, ts, total_time, model_part, aggregation_type, settings):
 
         settings = copy.deepcopy(settings)
         input_series = [
@@ -355,7 +368,6 @@ class WaterBalanceWidget(QDockWidget):
                                  (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 13, 14, 15, 16, 17, 18, 19, 22)])
         elif model_part == '2d':
             input_series = dict([input_series[i] for i in (0, 1, 4, 5, 9, 10, 11, 14, 15, 16, 18, 20)])
-            total_time[:, (10, 11)] = total_time[:, (10, 11)] * -1
 
         elif model_part == '1d':
             input_series = dict([input_series[i] for i in (2, 3, 6, 7, 8, 10, 11, 12, 13, 17, 19, 21)])
@@ -364,13 +376,13 @@ class WaterBalanceWidget(QDockWidget):
         for serie_setting in settings.get('items', []):
             serie_setting['active'] = True
             serie_setting['method'] = serie_setting['default_method']
-            serie_setting['color'] = [int(c) for c in serie_setting['def_color'].split(',')]
+            serie_setting['color'] = [int(c) for c in serie_setting['def_color'].split(',')] + [150]
             serie_setting['ts_series'] = {}
             nrs_input_series = []
             for serie in serie_setting['series']:
                 if serie not in input_series:
                     # throw good error message
-                    print('serie config error: {0} is an unknown serie or is doubled in the config.'.format(serie))
+                    log.warning('serie config error: %s is an unknown serie or is doubled in the config.', serie)
                 else:
                     nrs_input_series.append(input_series[serie])
                     del input_series[serie]
@@ -389,7 +401,17 @@ class WaterBalanceWidget(QDockWidget):
                 serie_setting['ts_series']['out'] = sum_neg
             else:
                 # throw config error
-                print('aggregation method unknown')
+                log.warning('aggregation %s method unknown.', serie_setting['default_method'])
+
+            if aggregation_type == 'm3 aggregated':
+                log.debug('aggregate')
+                diff = np.append([0], np.diff(ts))
+
+                serie_setting['ts_series']['in'] = serie_setting['ts_series']['in'] * diff
+                serie_setting['ts_series']['in'] = np.cumsum(serie_setting['ts_series']['in'], axis=0)
+
+                serie_setting['ts_series']['out'] = serie_setting['ts_series']['out'] * diff
+                serie_setting['ts_series']['out'] = np.cumsum(serie_setting['ts_series']['out'], axis=0)
 
         if len(input_series) > 0:
 
@@ -397,8 +419,8 @@ class WaterBalanceWidget(QDockWidget):
                 'name': 'Overige',
                 'default_method': settings['remnant_method'],
                 'order': 100,
-                'color': [int(c) for c in settings['remnant_def_color'].split(',')],
-                'def_color': settings['remnant_def_color'],
+                'color': [int(c) for c in settings['remnant_def_color'].split(',')] + [150],
+                'def_color': settings['remnant_def_color'] + [150],
                 'series': [key for key in input_series],
                 'ts_series': {}
             }
@@ -419,7 +441,7 @@ class WaterBalanceWidget(QDockWidget):
                 serie_setting['ts_series']['out'] = sum_neg
             else:
                 # throw config error
-                print('aggregation method unknown')
+                log.warning('aggregation %s method unknown.', serie_setting['default_method'])
 
             settings['items'].append(serie_setting)
 
@@ -485,6 +507,9 @@ class WaterBalanceWidget(QDockWidget):
         self.sum_type_combo_box = QComboBox(self)
         self.button_bar_hlayout.addWidget(self.sum_type_combo_box)
 
+        self.agg_combo_box = QComboBox(self)
+        self.button_bar_hlayout.addWidget(self.agg_combo_box)
+
         spacer_item = QSpacerItem(40,
                                   20,
                                   QSizePolicy.Expanding,
@@ -531,6 +556,6 @@ class WaterBalanceWidget(QDockWidget):
         dock_widget.setWindowTitle(_translate(
             "DockWidget", "3Di waterbalans", None))
         self.select_polygon_button.setText(_translate(
-            "DockWidget", "Teken gebied", None))
+            "DockWidget", "Teken nieuw gebied", None))
         self.reset_waterbalans_button.setText(_translate(
-            "DockWidget", "Reset waterbalans", None))
+            "DockWidget", "Verberg op kaart", None))

@@ -44,7 +44,6 @@ class PolygonDrawMapVisualisation(object):
 class PolygonDrawTool(QgsMapTool):
     def __init__(self, canvas, button, callback_on_draw_finish):
         QgsMapTool.__init__(self, canvas)
-        print 'PolygonDrawTool init'
         self.canvas = canvas
         self.callback_on_draw_finish = callback_on_draw_finish
 
@@ -54,7 +53,6 @@ class PolygonDrawTool(QgsMapTool):
         self.setButton(button)
 
     def activate(self):
-        print 'PolygonDrawTool activate'
         super(PolygonDrawTool, self).activate()
         self.canvas.setCursor(QCursor(Qt.CrossCursor))
 
@@ -80,7 +78,6 @@ class PolygonDrawTool(QgsMapTool):
             return
 
     def deactivate(self):
-        print 'PolygonDrawTool deactivate'
         super(PolygonDrawTool, self).deactivate()
         self.canvas.setCursor(QCursor(Qt.ArrowCursor))
 

@@ -67,7 +67,7 @@ def select_default_color(item_field):
         return colors.values()[0]
 
     # predefined colors are all used, return random color
-    return (randint(0, 256), randint(0, 256), randint(0, 256))
+    return (randint(0, 256), randint(0, 256), randint(0, 256), 180)
 
 
 class WaterbalanceItemModel(BaseModel):

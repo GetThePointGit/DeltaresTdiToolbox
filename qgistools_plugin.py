@@ -6,6 +6,7 @@ from PyQt4.QtCore import (QSettings, QTranslator, qVersion, QCoreApplication,
 from PyQt4.QtGui import QAction, QIcon
 # Import the code of the tools
 from zDeltaresTdiToolbox.tools.waterbalance import WaterBalanceTool
+from qgis.utils import plugins
 
 import resources  # NoQa
 
@@ -137,18 +138,13 @@ class DeltaresTdiToolbox(QObject):
         # get link to active threedi plugin
         log.debug('DeltaresTdiToolbox initGui')
         try:
-            from ThreeDiToolbox.threedi_tools import active_tdi_plugin
+            tdi_plugin = plugins['ThreeDiToolbox']
 
         except:
             raise ImportError("For water balance tool the ThreeDiToolbox plugin must be installed, "
                               "version xxx or higher")
 
         # make reference to other 3di plugin for getting loaded results, etc.
-        if len(active_tdi_plugin) < 1:
-            log.debug('active_tdi_plugin is empty: %s', active_tdi_plugin)
-            raise ValueError('ThreeDiToolbox plugin is not active, please activate first')
-        else:
-            tdi_plugin = active_tdi_plugin[0]
 
         # Declare instance attributes
         self.actions = []
@@ -200,4 +196,4 @@ class DeltaresTdiToolbox(QObject):
         try:
             del self.toolbar
         except AttributeError:
-            print("Error, toolbar already removed?")
+            log.error('Toolbar already removed?')

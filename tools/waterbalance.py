@@ -122,6 +122,8 @@ class WaterBalanceCalculation(object):
                 elif incoming:
                     pump_selection['in'].append(pump['id'])
 
+        log.info(str(flow_lines))
+
         return flow_lines, pump_selection
 
     def get_nodes(self, wb_polygon, model_part):
@@ -178,10 +180,11 @@ class WaterBalanceCalculation(object):
         for idx in link_ids['1d_bound_out']:
             tlink.append((idx, 11, -1))
 
+        # todo: these settings are strange- this is not what you expect from the direction of the lines
         for idx in link_ids['1d_2d_in']:
-            tlink.append((idx, 31, 1))
-        for idx in link_ids['1d_2d_out']:
             tlink.append((idx, 31, -1))
+        for idx in link_ids['1d_2d_out']:
+            tlink.append((idx, 31, 1))
 
         for idx in link_ids['1d_2d']:
             tlink.append((idx, 30, 1))
@@ -302,12 +305,12 @@ class WaterBalanceCalculation(object):
                 if source_nc == 'aggregation':
                     if parameter + '_cum' not in ds.get_available_variables():
                         skip = True
-                        print(parameter + '_cum niet beschikbaar! overslaan')
+                        log.warning('%s_cum niet beschikbaar! overslaan', parameter)
                         # todo: fallback on not aggregated version
                 else:
                     if parameter not in ds.get_available_variables():
                         skip = True
-                        print(parameter + 'niet beschikbaar! overslaan')
+                        log.warning('%s_cum niet beschikbaar! overslaan', parameter)
                 if not skip:
                     values_pref = 0
                     for ts_idx, t in enumerate(ts):
